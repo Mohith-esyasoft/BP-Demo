@@ -305,7 +305,58 @@ export async function getPassport(id: string): Promise<BatteryPassport> {
 }
 
 export async function createPassport(data: Partial<BatteryPassport>): Promise<BatteryPassport> {
-  const { data: result } = await apiClient.post<BatteryPassport>('/api/passports', data);
+  const payload = {
+    serialNumber: data.serialNumber,
+    model: data.model,
+    batteryType: data.batteryType,
+    chemistry: data.chemistry,
+    productionDate: data.productionDate ? new Date(data.productionDate).toISOString() : new Date().toISOString(),
+    intendedUse: data.intendedUse || undefined,
+    capacity: data.capacityKwh ? Number(data.capacityKwh) : undefined,
+    nominalVoltage: data.nominalVoltageV ? Number(data.nominalVoltageV) : undefined,
+    countryOfOrigin: data.countryOfOrigin || undefined,
+    carbonFootprint: data.carbonFootprintKgCo2eKwh ? Number(data.carbonFootprintKgCo2eKwh) : undefined,
+    ghgEmissions: data.ghgEmissions ? Number(data.ghgEmissions) : undefined,
+    manufacturingSiteEmissions: data.manufacturingSiteEmissions ? Number(data.manufacturingSiteEmissions) : undefined,
+    recycledContent: data.recycledContentPercent ? Number(data.recycledContentPercent) : undefined,
+    recyclingInfo: data.recyclingInformation || undefined,
+    circularityScore: data.circularityScore ? Number(data.circularityScore) : undefined,
+    warrantyStart: data.warrantyStartDate ? new Date(data.warrantyStartDate).toISOString() : undefined,
+    warrantyEnd: data.warrantyEndDate ? new Date(data.warrantyEndDate).toISOString() : undefined,
+    warrantyKm: data.warrantyKm ? Number(data.warrantyKm) : undefined,
+    materialComposition: {},
+  };
+
+  if (data.materials && Array.isArray(data.materials)) {
+    const composition: Record<string, any> = {};
+    data.materials.forEach((m) => {
+      if (m.name) {
+        composition[m.name.toLowerCase()] = {
+          percentage: Number(m.percentage) || 0,
+          origin: m.originCountry || '',
+          supplier: m.supplier || '',
+        };
+      }
+    });
+    payload.materialComposition = composition;
+  }
+
+  // Call the real API
+  const { data: result } = await apiClient.post<any>('/api/passports', payload);
+
+  // If there are certificates, create them
+  if (data.certificates && Array.isArray(data.certificates)) {
+    for (const cert of data.certificates) {
+      await apiClient.post(`/api/passports/${result.id}/certificates`, {
+        type: cert.type,
+        issuer: cert.issuer,
+        issuedDate: cert.issueDate ? new Date(cert.issueDate).toISOString() : new Date().toISOString(),
+        expiryDate: cert.expiryDate ? new Date(cert.expiryDate).toISOString() : undefined,
+        status: cert.status,
+      });
+    }
+  }
+
   return result;
 }
 
@@ -313,7 +364,49 @@ export async function updatePassport(
   id: string,
   data: Partial<BatteryPassport>
 ): Promise<BatteryPassport> {
-  const { data: result } = await apiClient.patch<BatteryPassport>(`/api/passports/${id}`, data);
+  const payload: any = {
+    serialNumber: data.serialNumber,
+    model: data.model,
+    batteryType: data.batteryType,
+    chemistry: data.chemistry,
+    intendedUse: data.intendedUse || undefined,
+    capacity: data.capacityKwh ? Number(data.capacityKwh) : undefined,
+    nominalVoltage: data.nominalVoltageV ? Number(data.nominalVoltageV) : undefined,
+    countryOfOrigin: data.countryOfOrigin || undefined,
+    carbonFootprint: data.carbonFootprintKgCo2eKwh ? Number(data.carbonFootprintKgCo2eKwh) : undefined,
+    ghgEmissions: data.ghgEmissions ? Number(data.ghgEmissions) : undefined,
+    manufacturingSiteEmissions: data.manufacturingSiteEmissions ? Number(data.manufacturingSiteEmissions) : undefined,
+    recycledContent: data.recycledContentPercent ? Number(data.recycledContentPercent) : undefined,
+    recyclingInfo: data.recyclingInformation || undefined,
+    circularityScore: data.circularityScore ? Number(data.circularityScore) : undefined,
+    warrantyKm: data.warrantyKm ? Number(data.warrantyKm) : undefined,
+  };
+
+  if (data.productionDate) {
+    payload.productionDate = new Date(data.productionDate).toISOString();
+  }
+  if (data.warrantyStartDate) {
+    payload.warrantyStart = new Date(data.warrantyStartDate).toISOString();
+  }
+  if (data.warrantyEndDate) {
+    payload.warrantyEnd = new Date(data.warrantyEndDate).toISOString();
+  }
+
+  if (data.materials && Array.isArray(data.materials)) {
+    const composition: Record<string, any> = {};
+    data.materials.forEach((m) => {
+      if (m.name) {
+        composition[m.name.toLowerCase()] = {
+          percentage: Number(m.percentage) || 0,
+          origin: m.originCountry || '',
+          supplier: m.supplier || '',
+        };
+      }
+    });
+    payload.materialComposition = composition;
+  }
+
+  const { data: result } = await apiClient.patch<any>(`/api/passports/${id}`, payload);
   return result;
 }
 
@@ -386,4 +479,9 @@ export async function getAuditLogs(passportId: string): Promise<AuditLog[]> {
       },
     ];
   }
+}
+
+export async function deletePassport(id: string): Promise<any> {
+  const { data } = await apiClient.delete<any>(`/api/passports/${id}`);
+  return data;
 }

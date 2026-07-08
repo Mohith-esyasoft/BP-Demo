@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { usePassports } from '@/lib/hooks/usePassports';
+import { usePassports, useDeletePassport } from '@/lib/hooks/usePassports';
 import { PassportStatusBadge } from '@/components/passport/PassportStatusBadge';
-import { formatDate } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { PassportStatus, ChemistryType } from '@/lib/api/passports';
 import {
   Plus,
@@ -41,11 +41,25 @@ const CHEMISTRY_OPTIONS: { value: ChemistryType | ''; label: string }[] = [
 
 export default function PassportsPage() {
   const router = useRouter();
+  const deleteMutation = useDeletePassport();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<PassportStatus | ''>('');
   const [chemistry, setChemistry] = useState<ChemistryType | ''>('');
   const [page, setPage] = useState(1);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  const handleDelete = async (id: string) => {
+    console.log('handleDelete invoked with id:', id);
+    if (typeof window !== 'undefined' && window.confirm('Are you sure you want to delete this battery passport?')) {
+      try {
+        await deleteMutation.mutateAsync(id);
+        setActiveMenuId(null);
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('Failed to delete battery passport.');
+      }
+    }
+  };
 
   const { data, isLoading } = usePassports({
     search: search || undefined,
@@ -152,7 +166,7 @@ export default function PassportsPage() {
                       ))}
                     </tr>
                   ))
-                : passports.map((passport) => (
+                : passports.map((passport, idx) => (
                     <tr
                       key={passport.id}
                       className="cursor-pointer hover:bg-slate-800/10 transition-colors"
@@ -210,7 +224,10 @@ export default function PassportsPage() {
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
                             {activeMenuId === passport.id && (
-                              <div className="absolute right-0 top-full mt-1 w-40 glass-card rounded-lg shadow-glass overflow-hidden z-20">
+                              <div className={cn(
+                                "absolute right-0 w-40 glass-card rounded-lg shadow-glass overflow-hidden z-20",
+                                idx >= passports.length - 2 ? "bottom-full mb-1" : "top-full mt-1"
+                              )}>
                                 <Link
                                   href={`/public-passport/${passport.id}`}
                                   className="flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:text-slate-100 hover:bg-slate-700/50 transition-colors"
@@ -218,7 +235,15 @@ export default function PassportsPage() {
                                   <ExternalLink className="w-3.5 h-3.5" />
                                   Public View
                                 </Link>
-                                <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDelete(passport.id);
+                                  }}
+                                  disabled={deleteMutation.isPending}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                                >
                                   <Trash2 className="w-3.5 h-3.5" />
                                   Delete
                                 </button>

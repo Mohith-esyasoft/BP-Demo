@@ -460,4 +460,20 @@ export class PassportsService {
       message: isValid ? 'Blockchain integrity verified' : 'Data tampering detected',
     };
   }
+
+  async delete(id: string, userId: string, userRole: string) {
+    const passport = await this.prisma.batteryPassport.findFirst({
+      where: { OR: [{ id }, { passportId: id }] },
+    });
+
+    if (!passport) throw new NotFoundException(`Passport ${id} not found`);
+
+    if (passport.createdById !== userId && userRole !== 'ADMIN') {
+      throw new ForbiddenException('You do not have permission to delete this passport');
+    }
+
+    return this.prisma.batteryPassport.delete({
+      where: { id: passport.id },
+    });
+  }
 }

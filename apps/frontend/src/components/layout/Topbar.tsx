@@ -88,12 +88,18 @@ export function Topbar() {
       {/* Right Actions */}
       <div className="flex items-center gap-1.5">
         {/* Calendar */}
-        <button className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200">
+        <button
+          className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200"
+          title="Calendar & Schedule"
+        >
           <Calendar className="w-4.5 h-4.5" />
         </button>
 
         {/* Help */}
-        <button className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200">
+        <button
+          className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200"
+          title="Help & Documentation"
+        >
           <HelpCircle className="w-4.5 h-4.5" />
         </button>
 
@@ -108,6 +114,7 @@ export function Topbar() {
               'relative p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200',
               showNotifications && 'bg-slate-800 text-slate-200'
             )}
+            title="Notifications"
           >
             <Bell className="w-4.5 h-4.5" />
             {unreadCount > 0 && (
@@ -171,6 +178,15 @@ export function Topbar() {
             </div>
           )}
         </div>
+
+        {/* System Settings */}
+        <button
+          onClick={() => router.push('/settings')}
+          className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200"
+          title="System Settings"
+        >
+          <Settings className="w-4.5 h-4.5" />
+        </button>
 
         {/* Divider */}
         <div className="w-px h-6 bg-slate-700/50 mx-1" />

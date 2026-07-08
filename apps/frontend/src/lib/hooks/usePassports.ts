@@ -14,6 +14,7 @@ import {
   approvePassport,
   rejectPassport,
   publishPassport,
+  deletePassport,
   BatteryPassport,
   PassportFilters,
   PaginatedPassports,
@@ -114,6 +115,17 @@ export function usePublishPassport(): UseMutationResult<BatteryPassport, Error, 
     mutationFn: publishPassport,
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: passportKeys.detail(result.id) });
+      queryClient.invalidateQueries({ queryKey: passportKeys.lists() });
+    },
+  });
+}
+
+// Delete passport
+export function useDeletePassport(): UseMutationResult<any, Error, string> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deletePassport,
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: passportKeys.lists() });
     },
   });

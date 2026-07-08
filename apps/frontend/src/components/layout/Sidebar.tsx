@@ -7,28 +7,16 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/lib/store/authStore';
 import {
   LayoutDashboard,
-  FileText,
-  CheckSquare,
-  Shield,
-  Award,
-  Users,
-  ClipboardList,
-  Settings,
-  ChevronDown,
-  ChevronRight,
-  Zap,
   PlusCircle,
   List,
+  Zap,
   ChevronLeft,
 } from 'lucide-react';
 
 interface NavItem {
   label: string;
-  href?: string;
+  href: string;
   icon: React.ElementType;
-  badge?: number;
-  children?: { label: string; href: string; icon: React.ElementType }[];
-  roles?: string[];
 }
 
 const navItems: NavItem[] = [
@@ -38,45 +26,14 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    label: 'Passports',
-    icon: FileText,
-    children: [
-      { label: 'All Passports', href: '/passports', icon: List },
-      { label: 'Create New', href: '/passports/new', icon: PlusCircle },
-    ],
+    label: 'Create New Battery Passport',
+    href: '/passports/new',
+    icon: PlusCircle,
   },
   {
-    label: 'Tasks & Approvals',
-    href: '/tasks',
-    icon: CheckSquare,
-    badge: 0,
-    roles: ['ADMIN', 'MANUFACTURER'],
-  },
-  {
-    label: 'Compliance',
-    href: '/compliance',
-    icon: Shield,
-  },
-  {
-    label: 'Certificates',
-    href: '/certificates',
-    icon: Award,
-  },
-  {
-    label: 'Stakeholders',
-    href: '/stakeholders',
-    icon: Users,
-    roles: ['ADMIN'],
-  },
-  {
-    label: 'Audit Trail',
-    href: '/audit-trail',
-    icon: ClipboardList,
-  },
-  {
-    label: 'Settings',
-    href: '/settings',
-    icon: Settings,
+    label: 'View Batteries',
+    href: '/passports',
+    icon: List,
   },
 ];
 
@@ -84,20 +41,8 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
-  const [openGroups, setOpenGroups] = useState<string[]>(['Passports']);
-
-  const toggleGroup = (label: string) => {
-    setOpenGroups((prev) =>
-      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label],
-    );
-  };
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
-
-  const filteredItems = navItems.filter((item) => {
-    if (!item.roles) return true;
-    return item.roles.includes(user?.role || '');
-  });
 
   return (
     <aside
@@ -114,7 +59,6 @@ export default function Sidebar() {
         {!collapsed && (
           <div className="overflow-hidden">
             <p className="text-white font-semibold text-sm leading-tight">Battery Passport</p>
-            <p className="text-emerald-400 text-xs font-medium">Good Energy</p>
           </div>
         )}
         <button
@@ -130,83 +74,23 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-        {filteredItems.map((item) => {
-          if (item.children) {
-            const isOpen = openGroups.includes(item.label);
-            const isGroupActive = item.children.some((c) => isActive(c.href));
-
-            return (
-              <div key={item.label}>
-                <button
-                  onClick={() => toggleGroup(item.label)}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
-                    isGroupActive
-                      ? 'text-emerald-400 bg-emerald-500/10'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800',
-                  )}
-                >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1 text-left">{item.label}</span>
-                      {isOpen ? (
-                        <ChevronDown className="w-4 h-4" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4" />
-                      )}
-                    </>
-                  )}
-                </button>
-
-                {!collapsed && isOpen && (
-                  <div className="ml-4 mt-1 space-y-1 border-l border-slate-700/50 pl-3">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className={cn(
-                          'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200',
-                          isActive(child.href)
-                            ? 'text-emerald-400 bg-emerald-500/10 font-medium'
-                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800',
-                        )}
-                      >
-                        <child.icon className="w-4 h-4 flex-shrink-0" />
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          }
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href!}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
-                isActive(item.href!)
-                  ? 'text-emerald-400 bg-emerald-500/10'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800',
-              )}
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              {!collapsed && (
-                <>
-                  <span className="flex-1">{item.label}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className="bg-emerald-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {item.badge}
-                    </span>
-                  )}
-                </>
-              )}
-            </Link>
-          );
-        })}
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+              isActive(item.href)
+                ? 'text-emerald-400 bg-emerald-500/10'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800',
+            )}
+          >
+            <item.icon className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && (
+              <span className="flex-1">{item.label}</span>
+            )}
+          </Link>
+        ))}
       </nav>
 
       {/* User Section */}

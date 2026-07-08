@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -104,5 +105,10 @@ export class PassportsController {
   @Get(':id/verify')
   verifyBlockchain(@Param('id') id: string) {
     return this.passportsService.verifyBlockchain(id);
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.passportsService.delete(id, user.id, user.role);
   }
 }
