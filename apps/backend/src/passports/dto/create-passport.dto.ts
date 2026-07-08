@@ -95,4 +95,16 @@ export class CreatePassportDto {
   @IsNumber()
   @Min(0)
   warrantyKm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  stateOfHealth?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  stateOfCharge?: number;
 }

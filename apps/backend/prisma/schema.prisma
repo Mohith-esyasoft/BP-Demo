@@ -72,6 +72,8 @@ model BatteryPassport {
   capacity        Float?
   nominalVoltage  Float?
   countryOfOrigin String?
+  stateOfHealth   Float?    @default(100)
+  stateOfCharge   Float?    @default(100)
 
   materialComposition Json?
   carbonFootprint     Float?

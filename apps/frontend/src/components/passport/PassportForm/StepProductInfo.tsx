@@ -141,6 +141,40 @@ export function StepProductInfo() {
           <p className="text-red-400 text-xs mt-1">{errors.nominalVoltageV.message}</p>
         )}
       </div>
+
+      {/* State of Health (SOH) */}
+      <div>
+        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+          State of Health (SoH %)
+        </label>
+        <input
+          {...register('stateOfHealth', { valueAsNumber: true })}
+          type="number"
+          step="any"
+          placeholder="e.g., 96"
+          className={cn('form-input', errors.stateOfHealth && 'border-red-500/50')}
+        />
+        {errors.stateOfHealth && (
+          <p className="text-red-400 text-xs mt-1">{errors.stateOfHealth.message}</p>
+        )}
+      </div>
+
+      {/* State of Charge (SOC) */}
+      <div>
+        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+          State of Charge (SoC %)
+        </label>
+        <input
+          {...register('stateOfCharge', { valueAsNumber: true })}
+          type="number"
+          step="any"
+          placeholder="e.g., 78"
+          className={cn('form-input', errors.stateOfCharge && 'border-red-500/50')}
+        />
+        {errors.stateOfCharge && (
+          <p className="text-red-400 text-xs mt-1">{errors.stateOfCharge.message}</p>
+        )}
+      </div>
     </div>
   );
 }

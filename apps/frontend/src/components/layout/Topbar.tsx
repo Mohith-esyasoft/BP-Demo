@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   Search,
   Bell,
@@ -46,13 +46,29 @@ const mockNotifications = [
 
 export function Topbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, clearAuth } = useAuthStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState(mockNotifications);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // Close help modal when navigating to a new page
+  useEffect(() => {
+    setShowHelpModal(false);
+  }, [pathname]);
+
+  // Close help modal on Escape key
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowHelpModal(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   const handleLogout = () => {
     clearAuth();
@@ -89,14 +105,16 @@ export function Topbar() {
       <div className="flex items-center gap-1.5">
         {/* Calendar */}
         <button
+          onClick={() => router.push('/tasks')}
           className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200"
-          title="Calendar & Schedule"
+          title="Tasks & Schedule"
         >
           <Calendar className="w-4.5 h-4.5" />
         </button>
 
         {/* Help */}
         <button
+          onClick={() => setShowHelpModal(true)}
           className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200"
           title="Help & Documentation"
         >
@@ -254,6 +272,67 @@ export function Topbar() {
             setShowUserMenu(false);
           }}
         />
+      )}
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <>
+          <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50" onClick={() => setShowHelpModal(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-slate-900 border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700/40">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-sm font-bold text-slate-100">Help & Documentation</h3>
+              </div>
+              <button onClick={() => setShowHelpModal(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">
+                <span className="text-lg leading-none">&times;</span>
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Quick Navigation</p>
+                <div className="space-y-2">
+                  {[
+                    { label: 'Dashboard', desc: 'Overview of all passports and stats', path: '/dashboard' },
+                    { label: 'Create Passport', desc: 'Register a new battery passport', path: '/passports/new' },
+                    { label: 'View Batteries', desc: 'Search, filter and manage passports', path: '/passports' },
+                    { label: 'Tasks & Schedule', desc: 'View upcoming compliance tasks', path: '/tasks' },
+                  ].map((item) => (
+                    <button
+                      key={item.path}
+                      onClick={() => { router.push(item.path); setShowHelpModal(false); }}
+                      className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-slate-800/50 text-left transition-colors"
+                    >
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-slate-200">{item.label}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="border-t border-slate-700/40 pt-4">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Keyboard Shortcuts</p>
+                <div className="space-y-2 text-xs">
+                  {[
+                    { key: 'N', desc: 'Create new passport' },
+                    { key: 'V', desc: 'View all batteries' },
+                    { key: 'D', desc: 'Go to dashboard' },
+                  ].map((s) => (
+                    <div key={s.key} className="flex items-center justify-between">
+                      <span className="text-slate-400">{s.desc}</span>
+                      <kbd className="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-300 font-mono">Alt + {s.key}</kbd>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="border-t border-slate-700/40 pt-4 text-center">
+                <p className="text-xs text-slate-500">EU Battery Regulation (2023/1542) compliant platform</p>
+                <p className="text-xs text-slate-600 mt-1">v1.0.0 · support@batterypassport.eu</p>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </header>
   );

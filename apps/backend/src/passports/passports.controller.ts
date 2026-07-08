@@ -27,11 +27,11 @@ class RejectDto {
 }
 
 @Controller('passports')
-@UseGuards(AuthGuard('jwt'))
 export class PassportsController {
   constructor(private readonly passportsService: PassportsService) {}
 
   @Get()
+  @UseGuards(AuthGuard('jwt'))
   findAll(
     @CurrentUser() user: any,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
@@ -47,18 +47,20 @@ export class PassportsController {
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
   findOne(@Param('id') id: string) {
     return this.passportsService.findOne(id);
   }
 
   @Post()
-  @UseGuards(RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN', 'MANUFACTURER', 'MATERIAL_SUPPLIER')
   create(@Body() dto: CreatePassportDto, @CurrentUser() user: any) {
     return this.passportsService.create(dto, user.id);
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
   update(
     @Param('id') id: string,
     @Body() dto: UpdatePassportDto,
@@ -68,19 +70,20 @@ export class PassportsController {
   }
 
   @Post(':id/submit')
+  @UseGuards(AuthGuard('jwt'))
   submit(@Param('id') id: string, @CurrentUser() user: any) {
     return this.passportsService.submit(id, user.id);
   }
 
   @Post(':id/approve')
-  @UseGuards(RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   approve(@Param('id') id: string, @CurrentUser() user: any) {
     return this.passportsService.approve(id, user.id);
   }
 
   @Post(':id/reject')
-  @UseGuards(RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   reject(
     @Param('id') id: string,
@@ -91,23 +94,26 @@ export class PassportsController {
   }
 
   @Post(':id/publish')
-  @UseGuards(RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   publish(@Param('id') id: string, @CurrentUser() user: any) {
     return this.passportsService.publish(id, user.id);
   }
 
   @Get(':id/audit-logs')
+  @UseGuards(AuthGuard('jwt'))
   getAuditLogs(@Param('id') id: string) {
     return this.passportsService.getAuditLogs(id);
   }
 
   @Get(':id/verify')
+  @UseGuards(AuthGuard('jwt'))
   verifyBlockchain(@Param('id') id: string) {
     return this.passportsService.verifyBlockchain(id);
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
   delete(@Param('id') id: string, @CurrentUser() user: any) {
     return this.passportsService.delete(id, user.id, user.role);
   }

@@ -41,6 +41,8 @@ export interface BatteryPassport {
   capacityKwh?: number;
   nominalVoltageV?: number;
   countryOfOrigin?: string;
+  stateOfHealth?: number;
+  stateOfCharge?: number;
 
   // Material Info
   materials?: Material[];
@@ -241,58 +243,72 @@ const mockPassports: BatteryPassport[] = [
   },
 ];
 
-export async function getPassports(filters: PassportFilters = {}): Promise<PaginatedPassports> {
-  try {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        params.append(key, String(value));
-      }
+export function mapBackendToFrontend(p: any): BatteryPassport {
+  if (!p) return p;
+
+  const materials: any[] = [];
+  if (p.materialComposition && typeof p.materialComposition === 'object') {
+    Object.entries(p.materialComposition).forEach(([name, details]: [string, any]) => {
+      materials.push({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        percentage: details?.percentage ?? 0,
+        originCountry: details?.origin ?? '',
+        supplier: details?.supplier ?? '',
+      });
     });
-    const { data } = await apiClient.get<any>(`/api/passports?${params}`);
-    const responseData = data.data || data;
-    return {
-      data: responseData.passports || responseData.data || [],
-      total: responseData.total || 0,
-      page: responseData.page || 1,
-      limit: responseData.limit || 10,
-      totalPages: responseData.totalPages || 1,
-    };
-  } catch {
-    // Return mock data
-    let filtered = [...mockPassports];
-    if (filters.status) filtered = filtered.filter((p) => p.status === filters.status);
-    if (filters.chemistry) filtered = filtered.filter((p) => p.chemistry === filters.chemistry);
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.passportId.toLowerCase().includes(q) ||
-          p.model.toLowerCase().includes(q) ||
-          p.serialNumber.toLowerCase().includes(q)
-      );
-    }
-    const page = filters.page ?? 1;
-    const limit = filters.limit ?? 10;
-    const start = (page - 1) * limit;
-    return {
-      data: filtered.slice(start, start + limit),
-      total: filtered.length,
-      page,
-      limit,
-      totalPages: Math.ceil(filtered.length / limit),
-    };
   }
+
+  const organizationName = p.createdBy?.organization ?? p.organizationName ?? 'GreenPower Ltd.';
+
+  return {
+    ...p,
+    capacityKwh: p.capacityKwh ?? p.capacity,
+    nominalVoltageV: p.nominalVoltageV ?? p.nominalVoltage,
+    carbonFootprintKgCo2eKwh: p.carbonFootprintKgCo2eKwh ?? p.carbonFootprint,
+    recycledContentPercent: p.recycledContentPercent ?? p.recycledContent,
+    recyclingInformation: p.recyclingInformation ?? p.recyclingInfo,
+    warrantyStartDate: p.warrantyStartDate ?? p.warrantyStart,
+    warrantyEndDate: p.warrantyEndDate ?? p.warrantyEnd,
+    stateOfHealth: p.stateOfHealth !== null && p.stateOfHealth !== undefined ? p.stateOfHealth : 100,
+    stateOfCharge: p.stateOfCharge !== null && p.stateOfCharge !== undefined ? p.stateOfCharge : 100,
+    materials: p.materials && p.materials.length > 0 ? p.materials : materials,
+    organizationName,
+    lifecycleEvents: p.lifecycleEvents ?? [
+      { id: 'e1', event: 'Manufactured', date: p.productionDate || '2024-01-15', location: p.countryOfOrigin || 'Germany' },
+      { id: 'e2', event: 'Shipped', date: '2024-02-01', location: 'Rotterdam Port' },
+      { id: 'e3', event: 'Installed', date: '2024-02-20', location: 'Berlin, Germany' },
+      { id: 'e4', event: 'In Service', date: '2024-02-25', location: 'Berlin, Germany' },
+    ],
+  };
+}
+
+export async function getPassports(filters: PassportFilters = {}): Promise<PaginatedPassports> {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      params.append(key, String(value));
+    }
+  });
+  const { data } = await apiClient.get<any>(`/api/passports?${params}`);
+  const inner = data?.passports !== undefined ? data : (data?.data ?? data);
+  const mapped = (inner.passports ?? inner.data ?? []).map(mapBackendToFrontend);
+  return {
+    data: mapped,
+    total: inner.total ?? 0,
+    page: inner.page ?? 1,
+    limit: inner.limit ?? 10,
+    totalPages: inner.totalPages ?? 1,
+  };
 }
 
 export async function getPassport(id: string): Promise<BatteryPassport> {
   try {
-    const { data } = await apiClient.get<BatteryPassport>(`/api/passports/${id}`);
-    return data;
+    const { data } = await apiClient.get<any>(`/api/passports/${id}`);
+    return mapBackendToFrontend(data);
   } catch {
     const passport = mockPassports.find((p) => p.id === id || p.passportId === id);
     if (!passport) throw new Error('Passport not found');
-    return {
+    return mapBackendToFrontend({
       ...passport,
       lifecycleEvents: [
         { id: 'e1', event: 'Manufactured', date: passport.productionDate || '2024-01-15', location: passport.countryOfOrigin || 'Germany' },
@@ -300,7 +316,7 @@ export async function getPassport(id: string): Promise<BatteryPassport> {
         { id: 'e3', event: 'Installed', date: '2024-02-20', location: 'Berlin, Germany' },
         { id: 'e4', event: 'In Service', date: '2024-02-25', location: 'Berlin, Germany' },
       ],
-    };
+    });
   }
 }
 
@@ -324,6 +340,8 @@ export async function createPassport(data: Partial<BatteryPassport>): Promise<Ba
     warrantyStart: data.warrantyStartDate ? new Date(data.warrantyStartDate).toISOString() : undefined,
     warrantyEnd: data.warrantyEndDate ? new Date(data.warrantyEndDate).toISOString() : undefined,
     warrantyKm: data.warrantyKm ? Number(data.warrantyKm) : undefined,
+    stateOfHealth: data.stateOfHealth !== undefined ? Number(data.stateOfHealth) : undefined,
+    stateOfCharge: data.stateOfCharge !== undefined ? Number(data.stateOfCharge) : undefined,
     materialComposition: {},
   };
 
@@ -380,6 +398,8 @@ export async function updatePassport(
     recyclingInfo: data.recyclingInformation || undefined,
     circularityScore: data.circularityScore ? Number(data.circularityScore) : undefined,
     warrantyKm: data.warrantyKm ? Number(data.warrantyKm) : undefined,
+    stateOfHealth: data.stateOfHealth !== undefined ? Number(data.stateOfHealth) : undefined,
+    stateOfCharge: data.stateOfCharge !== undefined ? Number(data.stateOfCharge) : undefined,
   };
 
   if (data.productionDate) {
@@ -433,12 +453,8 @@ export async function publishPassport(id: string): Promise<BatteryPassport> {
 }
 
 export async function getPublicPassport(id: string): Promise<BatteryPassport> {
-  try {
-    const { data } = await apiClient.get<BatteryPassport>(`/api/public/passports/${id}`);
-    return data;
-  } catch {
-    return getPassport(id);
-  }
+  const { data } = await apiClient.get<any>(`/api/passports/public/${id}`);
+  return mapBackendToFrontend(data);
 }
 
 export async function getAuditLogs(passportId: string): Promise<AuditLog[]> {

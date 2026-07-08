@@ -126,7 +126,7 @@ export function useDeletePassport(): UseMutationResult<any, Error, string> {
   return useMutation({
     mutationFn: deletePassport,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: passportKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ['passports'] });
     },
   });
 }

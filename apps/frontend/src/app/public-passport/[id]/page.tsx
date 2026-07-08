@@ -224,10 +224,17 @@ export default function PublicPassportViewPage() {
             <div className="flex-1 space-y-4">
               <div>
                 {/* Verified Battery Badge */}
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-[11px] font-bold">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Verified Battery
-                </div>
+                {passport.status === 'PUBLISHED' ? (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-[11px] font-bold">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Verified Battery
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-100 text-amber-700 text-[11px] font-bold">
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                    Preview Mode ({passport.status})
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 mt-2">
                   <h2 className="text-xl font-bold text-slate-800 font-mono tracking-tight">
@@ -293,11 +300,15 @@ export default function PublicPassportViewPage() {
                 </div>
                 <div>
                   <p className="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">State of Health (SoH)</p>
-                  <p className="text-emerald-600 font-extrabold mt-1 text-sm">96% of nominal</p>
+                  <p className="text-emerald-600 font-extrabold mt-1 text-sm font-mono">
+                    {passport.stateOfHealth !== undefined ? `${passport.stateOfHealth}% of nominal` : '100% of nominal'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">State of Charge (SoC)</p>
-                  <p className="text-slate-700 font-bold mt-1 text-sm font-mono">78%</p>
+                  <p className="text-slate-700 font-bold mt-1 text-sm font-mono">
+                    {passport.stateOfCharge !== undefined ? `${passport.stateOfCharge}%` : '100%'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -353,22 +364,24 @@ export default function PublicPassportViewPage() {
               </h3>
 
               <div className="mt-4 space-y-3.5">
-                {[
-                  { name: 'UN38.3', desc: 'Lithium Transport Safety' },
-                  { name: 'CE', desc: 'European Conformity' },
-                  { name: 'UKCA', desc: 'UK Conformity Assessed' },
-                ].map((cert) => (
-                  <div key={cert.name} className="flex items-center justify-between text-xs border-b border-slate-50 pb-2">
-                    <span className="flex items-center gap-2 font-bold text-slate-800">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      {cert.name}
-                    </span>
-                    <span className="text-emerald-600 font-bold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Compliant
-                    </span>
+                {passport.certificates && passport.certificates.length > 0 ? (
+                  passport.certificates.map((cert: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between text-xs border-b border-slate-50 pb-2">
+                      <span className="flex items-center gap-2 font-bold text-slate-800">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        {cert.type}
+                      </span>
+                      <span className="text-emerald-600 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {cert.status === 'VALID' ? 'Compliant' : cert.status}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-slate-400 text-xs py-4 text-center">
+                    No compliance certificates registered
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -394,32 +407,28 @@ export default function PublicPassportViewPage() {
                   <div className="h-full bg-emerald-500 w-3/4 rounded-full" />
                 </div>
 
-                {[
-                  { stage: 'Mfg', active: true, done: true, date: '15 May 24' },
-                  { stage: 'Ship', active: true, done: true, date: '18 May 24' },
-                  { stage: 'Inst', active: true, done: true, date: '01 Jun 24' },
-                  { stage: 'Active', active: true, done: false, date: 'Current' },
-                  { stage: 'Eol', active: false, done: false, date: '—' },
-                ].map((step, idx) => (
+                {(passport.lifecycleEvents || []).map((step: any, idx: number) => (
                   <div key={idx} className="flex flex-col items-center relative z-10">
                     <div
                       className={`w-9 h-9 rounded-full flex items-center justify-center border-2 text-[10px] font-extrabold transition-all duration-300 ${
-                        step.done
+                        idx < 3
                           ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
-                          : step.active
+                          : idx === 3
                           ? 'bg-emerald-50 border-emerald-500 text-emerald-600 animate-pulse'
                           : 'bg-white border-slate-200 text-slate-400'
                       }`}
                     >
                       {idx + 1}
                     </div>
-                    <span className="text-[10px] font-bold text-slate-600 mt-2">{step.stage}</span>
+                    <span className="text-[10px] font-bold text-slate-600 mt-2">{step.event || step.stage}</span>
                     <span
                       className={`text-[9px] font-mono mt-0.5 ${
-                        step.stage === 'Active' ? 'text-emerald-600 font-bold' : 'text-slate-400'
+                        idx === 3 ? 'text-emerald-600 font-bold' : 'text-slate-400'
                       }`}
                     >
-                      {step.date}
+                      {step.date && isNaN(Number(step.date)) && !isNaN(Date.parse(step.date))
+                        ? formatDate(step.date)
+                        : step.date || '—'}
                     </span>
                   </div>
                 ))}
@@ -465,6 +474,48 @@ export default function PublicPassportViewPage() {
                 <p className="text-slate-800 font-extrabold text-xs">8 Years</p>
                 <p className="text-[10px] text-slate-500 font-medium">or {passport.warrantyKm ? `${passport.warrantyKm.toLocaleString()} km` : '160,000 km'}</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Material Composition Card */}
+        <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm">
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-emerald-500" />
+              Material Composition & Active Minerals
+            </h3>
+            <p className="text-xs text-slate-500 mt-2">
+              Declared active materials and chemical composition of the battery cell (Chemistry: <strong className="text-slate-700">{passport.chemistry}</strong>).
+            </p>
+            
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {passport.materials && passport.materials.length > 0 ? (
+                passport.materials.map((mat: any, idx: number) => (
+                  <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/30 flex flex-col justify-between">
+                    <div className="flex justify-between items-center">
+                      <span className="font-extrabold text-slate-800 text-xs">{mat.name}</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold">
+                        {mat.percentage}%
+                      </span>
+                    </div>
+                    <div className="mt-2 space-y-1 text-[10px] text-slate-500">
+                      <div className="flex justify-between">
+                        <span>Origin Country:</span>
+                        <span className="font-semibold text-slate-700">{mat.originCountry}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Supplier:</span>
+                        <span className="font-semibold text-slate-700">{mat.supplier}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full text-slate-400 text-xs py-4 text-center">
+                  No material composition details registered.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -554,7 +605,9 @@ export default function PublicPassportViewPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">State of Health (SoH):</span>
-                    <span className="font-bold text-emerald-600">96% of total</span>
+                    <span className="font-bold text-emerald-600">
+                      {passport.stateOfHealth !== undefined ? `${passport.stateOfHealth}% of nominal` : '100% of nominal'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Origin:</span>

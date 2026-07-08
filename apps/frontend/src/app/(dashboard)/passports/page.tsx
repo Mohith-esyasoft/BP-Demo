@@ -47,17 +47,18 @@ export default function PassportsPage() {
   const [chemistry, setChemistry] = useState<ChemistryType | ''>('');
   const [page, setPage] = useState(1);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     console.log('handleDelete invoked with id:', id);
-    if (typeof window !== 'undefined' && window.confirm('Are you sure you want to delete this battery passport?')) {
-      try {
-        await deleteMutation.mutateAsync(id);
-        setActiveMenuId(null);
-      } catch (err) {
-        console.error('Delete error:', err);
-        alert('Failed to delete battery passport.');
-      }
+    try {
+      await deleteMutation.mutateAsync(id);
+      setConfirmDeleteId(null);
+      setActiveMenuId(null);
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Failed to delete battery passport.');
+      setConfirmDeleteId(null);
     }
   };
 
@@ -202,54 +203,45 @@ export default function PassportsPage() {
                       </td>
                       <td className="text-right pr-5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
-                          <Link
-                            href={`/passports/${passport.id}`}
+                          {/* Eye = Public Preview */}
+                          <button
+                            onClick={() => window.open(`/public-passport/${passport.id}`, '_blank')}
                             className="p-1.5 rounded-md text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
-                            title="View"
+                            title="Public Preview"
                           >
                             <Eye className="w-4 h-4" />
-                          </Link>
-                          <Link
-                            href={`/passports/${passport.id}/edit`}
+                          </button>
+                          {/* Pencil = Edit */}
+                          <button
+                            onClick={() => router.push(`/passports/${passport.id}/edit`)}
                             className="p-1.5 rounded-md text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
-                            title="Edit"
+                            title="Edit Passport"
                           >
                             <Edit className="w-4 h-4" />
-                          </Link>
-                          <div className="relative">
+                          </button>
+                          {confirmDeleteId === passport.id ? (
                             <button
-                              onClick={() => setActiveMenuId(activeMenuId === passport.id ? null : passport.id)}
-                              className="p-1.5 rounded-md text-slate-500 hover:text-slate-300 hover:bg-slate-700/50 transition-all"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(passport.id);
+                              }}
+                              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-all animate-pulse"
+                              title="Click to confirm deletion"
                             >
-                              <MoreHorizontal className="w-4 h-4" />
+                              Confirm?
                             </button>
-                            {activeMenuId === passport.id && (
-                              <div className={cn(
-                                "absolute right-0 w-40 glass-card rounded-lg shadow-glass overflow-hidden z-20",
-                                idx >= passports.length - 2 ? "bottom-full mb-1" : "top-full mt-1"
-                              )}>
-                                <Link
-                                  href={`/public-passport/${passport.id}`}
-                                  className="flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:text-slate-100 hover:bg-slate-700/50 transition-colors"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                  Public View
-                                </Link>
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleDelete(passport.id);
-                                  }}
-                                  disabled={deleteMutation.isPending}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-50"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  Delete
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirmDeleteId(passport.id);
+                              }}
+                              className="p-1.5 rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                              title="Delete Passport"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

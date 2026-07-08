@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Loader2,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StepIdentification } from './StepIdentification';
@@ -29,6 +30,13 @@ import { StepReview } from './StepReview';
 import { createPassport } from '@/lib/api/passports';
 import { generatePassportId } from '@/lib/utils';
 
+const emptyToUndefined = (val: any) => {
+  if (val === '' || val === null || val === undefined || (typeof val === 'number' && isNaN(val))) {
+    return undefined;
+  }
+  return Number(val);
+};
+
 export const passportSchema = z.object({
   // Step 1: Identification
   passportId: z.string().min(1, 'Passport ID is required'),
@@ -40,24 +48,24 @@ export const passportSchema = z.object({
   chemistry: z.enum(['NMC', 'LFP', 'NCA', 'LMO', 'LTO', 'SOLID_STATE', 'OTHER']),
   productionDate: z.string().min(1, 'Production date is required'),
   intendedUse: z.string().optional(),
-  capacityKwh: z.number().positive('Must be positive').optional(),
-  nominalVoltageV: z.number().positive('Must be positive').optional(),
+  capacityKwh: z.preprocess(emptyToUndefined, z.number().positive('Must be positive').optional()),
+  nominalVoltageV: z.preprocess(emptyToUndefined, z.number().positive('Must be positive').optional()),
   countryOfOrigin: z.string().min(1, 'Country of origin is required'),
 
   // Step 3: Materials
   materials: z.array(
     z.object({
       name: z.string().min(1),
-      percentage: z.number().min(0).max(100),
+      percentage: z.preprocess(emptyToUndefined, z.number().min(0).max(100)),
       originCountry: z.string().min(1),
       supplier: z.string().min(1),
     })
   ).optional(),
 
   // Step 4: Carbon
-  carbonFootprintKgCo2eKwh: z.number().min(0).optional(),
-  ghgEmissions: z.number().min(0).optional(),
-  manufacturingSiteEmissions: z.number().min(0).optional(),
+  carbonFootprintKgCo2eKwh: z.preprocess(emptyToUndefined, z.number().min(0).optional()),
+  ghgEmissions: z.preprocess(emptyToUndefined, z.number().min(0).optional()),
+  manufacturingSiteEmissions: z.preprocess(emptyToUndefined, z.number().min(0).optional()),
 
   // Step 5: Compliance
   certificates: z.array(
@@ -71,12 +79,14 @@ export const passportSchema = z.object({
   ).optional(),
 
   // Step 6: Circularity
-  recycledContentPercent: z.number().min(0).max(100).optional(),
+  recycledContentPercent: z.preprocess(emptyToUndefined, z.number().min(0).max(100).optional()),
   recyclingInformation: z.string().optional(),
-  circularityScore: z.number().min(0).max(100).optional(),
+  circularityScore: z.preprocess(emptyToUndefined, z.number().min(0).max(100).optional()),
   warrantyStartDate: z.string().optional(),
   warrantyEndDate: z.string().optional(),
-  warrantyKm: z.number().min(0).optional(),
+  warrantyKm: z.preprocess(emptyToUndefined, z.number().min(0).optional()),
+  stateOfHealth: z.preprocess(emptyToUndefined, z.number().min(0).max(100).optional()),
+  stateOfCharge: z.preprocess(emptyToUndefined, z.number().min(0).max(100).optional()),
 });
 
 export type PassportFormData = z.infer<typeof passportSchema>;
@@ -112,6 +122,62 @@ export function PassportForm() {
 
   const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100;
 
+  const handleAutofill = () => {
+    const randomModels = [
+      'VoltPack Ultra 100', 'EcoPower Home 10', 'VoltPack Industrial 150',
+      'VoltPack Economy 60', 'EcoPower Stationary 500', 'VoltPack Sport 75',
+      'Apex Grid Storage 1000', 'VoltPack Marine 200'
+    ];
+    const randomUses = [
+      'Commercial Fleet EV', 'Residential Solar Storage', 'High-drain Industrial Machinery',
+      'Grid Peak Shaving', 'Light Passenger EV'
+    ];
+    const randomCountries = ['Germany', 'Netherlands', 'Sweden', 'Finland', 'Chile', 'Zambia'];
+    const randomTypes = ['EV', 'INDUSTRIAL', 'STATIONARY'] as const;
+    const randomChems = ['NMC', 'LFP', 'NCA', 'LMO', 'LTO'] as const;
+
+    const model = randomModels[Math.floor(Math.random() * randomModels.length)];
+    const serialNumber = `SN-2024-${Math.floor(100000 + Math.random() * 900000)}`;
+    const batteryType = randomTypes[Math.floor(Math.random() * randomTypes.length)];
+    const chemistry = randomChems[Math.floor(Math.random() * randomChems.length)];
+    const countryOfOrigin = randomCountries[Math.floor(Math.random() * randomCountries.length)];
+    const intendedUse = randomUses[Math.floor(Math.random() * randomUses.length)];
+
+    methods.reset({
+      passportId: generatePassportId(),
+      serialNumber,
+      model,
+      batteryType,
+      chemistry,
+      productionDate: '2024-04-12',
+      intendedUse,
+      capacityKwh: Math.floor(50 + Math.random() * 450),
+      nominalVoltageV: Math.floor(200 + Math.random() * 600),
+      countryOfOrigin,
+      carbonFootprintKgCo2eKwh: Math.floor(40 + Math.random() * 80),
+      ghgEmissions: Math.floor(50 + Math.random() * 150),
+      manufacturingSiteEmissions: Math.floor(10 + Math.random() * 40),
+      recycledContentPercent: Math.floor(5 + Math.random() * 30),
+      recyclingInformation: 'EU compliant recycling via certified partner network. Safe cell extraction guidelines attached.',
+      circularityScore: Math.floor(60 + Math.random() * 35),
+      warrantyStartDate: '2024-05-01',
+      warrantyEndDate: '2032-05-01',
+      warrantyKm: 160000,
+      stateOfHealth: 96,
+      stateOfCharge: 78,
+      materials: [
+        { name: 'Nickel', percentage: 33, originCountry: 'Finland', supplier: 'Nordic Nickel AS' },
+        { name: 'Manganese', percentage: 33, originCountry: 'Zambia', supplier: 'EthicalMinerals SA' },
+        { name: 'Cobalt', percentage: 34, originCountry: 'Chile', supplier: 'LithiumSource Asia' }
+      ],
+      certificates: [
+        { type: 'UN38.3', issuer: 'TÜV SÜD Europe', issueDate: '2024-01-10', expiryDate: '2027-01-10', status: 'VALID' },
+        { type: 'CE', issuer: 'SGS Certification', issueDate: '2024-01-15', expiryDate: '2029-01-15', status: 'VALID' }
+      ]
+    });
+    setError(null);
+  };
+
   const handleNext = async () => {
     let fieldsToValidate: (keyof PassportFormData)[] = [];
 
@@ -124,6 +190,24 @@ export function PassportForm() {
 
   const handlePrev = () => {
     setCurrentStep((s) => Math.max(1, s - 1));
+  };
+
+  const onInvalid = (errors: any) => {
+    console.warn('Form validation failed:', errors);
+    const findFirstError = (obj: any): string | null => {
+      if (!obj) return null;
+      if (obj.message) return obj.message;
+      for (const key of Object.keys(obj)) {
+        const val = obj[key];
+        if (typeof val === 'object') {
+          const msg = findFirstError(val);
+          if (msg) return msg;
+        }
+      }
+      return null;
+    };
+    const msg = findFirstError(errors);
+    setError(msg ? `Validation Error: ${msg}` : 'Form validation failed. Please check all fields.');
   };
 
   const onSubmit = async (data: PassportFormData) => {
@@ -155,7 +239,19 @@ export function PassportForm() {
     <FormProvider {...methods}>
       <div className="space-y-6">
         {/* Step Progress Bar */}
-        <div className="glass-card rounded-xl p-5">
+        <div className="glass-card rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Creation Wizard Progress</span>
+            <button
+              type="button"
+              onClick={handleAutofill}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Autofill Demo Data
+            </button>
+          </div>
+
           {/* Progress Bar */}
           <div className="relative mb-6">
             <div className="h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
@@ -286,7 +382,7 @@ export function PassportForm() {
           ) : (
             <button
               type="button"
-              onClick={methods.handleSubmit(onSubmit)}
+              onClick={methods.handleSubmit(onSubmit, onInvalid)}
               disabled={isSubmitting}
               className="flex items-center gap-2 px-6 py-2.5 rounded-lg btn-primary text-sm font-semibold disabled:opacity-70 disabled:cursor-not-allowed"
             >

@@ -158,6 +158,8 @@ export class PassportsService {
         warrantyStart: dto.warrantyStart ? new Date(dto.warrantyStart) : undefined,
         warrantyEnd: dto.warrantyEnd ? new Date(dto.warrantyEnd) : undefined,
         warrantyKm: dto.warrantyKm,
+        stateOfHealth: dto.stateOfHealth !== undefined ? dto.stateOfHealth : 100,
+        stateOfCharge: dto.stateOfCharge !== undefined ? dto.stateOfCharge : 100,
         qrCode: `https://passport.batterypassport.eu/scan/${passportId}`,
         createdById: userId,
         status: 'DRAFT',
@@ -220,6 +222,8 @@ export class PassportsService {
     if (dto.warrantyStart !== undefined) data.warrantyStart = new Date(dto.warrantyStart);
     if (dto.warrantyEnd !== undefined) data.warrantyEnd = new Date(dto.warrantyEnd);
     if (dto.warrantyKm !== undefined) data.warrantyKm = dto.warrantyKm;
+    if (dto.stateOfHealth !== undefined) data.stateOfHealth = dto.stateOfHealth;
+    if (dto.stateOfCharge !== undefined) data.stateOfCharge = dto.stateOfCharge;
 
     const updated = await this.prisma.batteryPassport.update({
       where: { id: passport.id },
@@ -373,8 +377,7 @@ export class PassportsService {
   async getPublicPassport(passportId: string) {
     const passport = await this.prisma.batteryPassport.findFirst({
       where: {
-        OR: [{ passportId }, { serialNumber: passportId }],
-        status: 'PUBLISHED',
+        OR: [{ id: passportId }, { passportId }, { serialNumber: passportId }],
       },
       select: {
         passportId: true,
