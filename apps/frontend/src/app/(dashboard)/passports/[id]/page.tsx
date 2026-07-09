@@ -30,14 +30,72 @@ import {
   X,
   Lock,
   RefreshCw,
+  CheckCircle,
+  XCircle,
+  ShieldCheck,
+  Copy,
 } from 'lucide-react';
 import Link from 'next/link';
+import { verifyPassport } from '@/lib/api/passports';
 
 export default function PassportDetailPage() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'materials' | 'carbon' | 'compliance' | 'circularity' | 'audit'>('overview');
+  
+  const [verifying, setVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<any>(null);
+
+  const [copiedTx, setCopiedTx] = useState(false);
+  const [copiedHash, setCopiedHash] = useState(false);
+  const [copiedLocalHash, setCopiedLocalHash] = useState(false);
+  const [copiedChainHash, setCopiedChainHash] = useState(false);
+
+  const handleCopyTx = () => {
+    if (!passport) return;
+    navigator.clipboard.writeText(passport.blockchainTx || '');
+    setCopiedTx(true);
+    setTimeout(() => setCopiedTx(false), 2000);
+  };
+
+  const handleCopyHash = () => {
+    if (!passport) return;
+    navigator.clipboard.writeText(passport.blockchainHash || '');
+    setCopiedHash(true);
+    setTimeout(() => setCopiedHash(false), 2000);
+  };
+
+  const handleCopyLocalHash = () => {
+    navigator.clipboard.writeText(verificationResult?.currentHash || '');
+    setCopiedLocalHash(true);
+    setTimeout(() => setCopiedLocalHash(false), 2000);
+  };
+
+  const handleCopyChainHash = () => {
+    navigator.clipboard.writeText(verificationResult?.storedHash || '');
+    setCopiedChainHash(true);
+    setTimeout(() => setCopiedChainHash(false), 2000);
+  };
+
+  const handleVerifyBlockchain = async () => {
+    setVerifying(true);
+    setVerificationResult(null);
+    try {
+      const result = await verifyPassport(id);
+      setVerificationResult(result);
+    } catch (err: any) {
+      console.error(err);
+      setVerificationResult({
+        verified: false,
+        message: err.message || 'Verification call failed',
+        currentHash: 'Error',
+        storedHash: 'Error'
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
 
@@ -240,15 +298,110 @@ export default function PassportDetailPage() {
           {passport.blockchainHash && (
             <div className="mt-6 p-4 rounded-xl border border-emerald-500/15 bg-emerald-500/5 space-y-3">
               <div className="flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-emerald-400" />
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
                 <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Blockchain Secured</h4>
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed">
                 This passport data is sealed on the blockchain ledger. Integrity verification is active.
               </p>
-              <div className="space-y-1 font-mono text-[9px] text-slate-500">
-                <p className="truncate">TX: {passport.blockchainTx}</p>
-                <p className="truncate">Hash: {passport.blockchainHash}</p>
+              
+              <button
+                onClick={handleVerifyBlockchain}
+                disabled={verifying}
+                className="w-full py-1.5 px-3 bg-emerald-600/20 hover:bg-emerald-600/35 disabled:bg-emerald-800/10 disabled:text-emerald-600 disabled:border-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg text-[10px] font-bold transition-all duration-200 flex items-center justify-center gap-1.5"
+              >
+                {verifying ? (
+                  <>
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                    Verifying Integrity...
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-3 h-3" />
+                    Verify On-Chain Integrity
+                  </>
+                )}
+              </button>
+
+              {verificationResult && (
+                <div className={`p-2.5 rounded-lg border text-[10px] space-y-1.5 ${
+                  verificationResult.verified 
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                    : 'bg-red-500/10 border-red-500/20 text-red-400'
+                }`}>
+                  <div className="flex items-center gap-1 font-bold">
+                    {verificationResult.verified ? (
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <XCircle className="w-3.5 h-3.5 text-red-400" />
+                    )}
+                    {verificationResult.verified ? 'Integrity Verified!' : 'Tampering Detected!'}
+                  </div>
+                  <p className="text-[9px] text-slate-400 leading-tight">
+                    {verificationResult.message}
+                  </p>
+                  <div className="font-mono text-[8px] space-y-1 text-slate-500 border-t border-slate-700/30 pt-1.5 mt-1">
+                    <div className="flex items-center justify-between gap-1 group">
+                      <span className="truncate flex-1" title={verificationResult.currentHash}>Local: {verificationResult.currentHash}</span>
+                      <button
+                        onClick={handleCopyLocalHash}
+                        className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                        title="Copy Local Hash"
+                      >
+                        {copiedLocalHash ? (
+                          <Check className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between gap-1 group">
+                      <span className="truncate flex-1" title={verificationResult.storedHash}>Chain: {verificationResult.storedHash}</span>
+                      <button
+                        onClick={handleCopyChainHash}
+                        className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                        title="Copy Chain Hash"
+                      >
+                        {copiedChainHash ? (
+                          <Check className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1.5 font-mono text-[9px] text-slate-500 border-t border-slate-800/40 pt-2">
+                <div className="flex items-center justify-between gap-1 group">
+                  <span className="truncate flex-1" title={passport.blockchainTx}>TX: {passport.blockchainTx}</span>
+                  <button
+                    onClick={handleCopyTx}
+                    className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                    title="Copy Transaction Hash"
+                  >
+                    {copiedTx ? (
+                      <Check className="w-3 h-3 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3 h-3" />
+                    )}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-1 group">
+                  <span className="truncate flex-1" title={passport.blockchainHash}>Hash: {passport.blockchainHash}</span>
+                  <button
+                    onClick={handleCopyHash}
+                    className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                    title="Copy Data Hash"
+                  >
+                    {copiedHash ? (
+                      <Check className="w-3 h-3 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3 h-3" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           )}

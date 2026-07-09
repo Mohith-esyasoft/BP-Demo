@@ -501,3 +501,14 @@ export async function deletePassport(id: string): Promise<any> {
   const { data } = await apiClient.delete<any>(`/api/passports/${id}`);
   return data;
 }
+
+export async function verifyPassport(id: string): Promise<{
+  verified: boolean;
+  storedHash: string;
+  currentHash: string;
+  txHash: string;
+  message: string;
+}> {
+  const { data } = await apiClient.get<any>(`/api/passports/${id}/verify`);
+  return data;
+}
