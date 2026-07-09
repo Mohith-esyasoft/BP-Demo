@@ -92,14 +92,6 @@ function CircularProgress({
 export default function PublicPassportViewPage() {
   const { id } = useParams() as { id: string };
   const [copied, setCopied] = useState(false);
-  const [showQRModal, setShowQRModal] = useState(false);
-
-  const getQRValue = () => {
-    if (typeof window !== 'undefined') {
-      return window.location.origin + `/public-passport/${id}`;
-    }
-    return `https://passport.batterypassport.eu/public-passport/${id}`;
-  };
 
   const { data: passport, isLoading, error } = useQuery({
     queryKey: ['public-passport', id],
@@ -208,15 +200,6 @@ export default function PublicPassportViewPage() {
                   className="object-contain"
                   priority
                 />
-              </div>
-              <div className="mt-4 text-center w-full">
-                <button
-                  onClick={() => setShowQRModal(true)}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
-                >
-                  <QrCode className="w-3.5 h-3.5" />
-                  View Verification QR
-                </button>
               </div>
             </div>
 
@@ -556,68 +539,6 @@ export default function PublicPassportViewPage() {
           </div>
         </div>
 
-        {/* QR Code Modal Overlay */}
-        {showQRModal && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-sm w-full p-6 relative animate-scale-in">
-              <button
-                onClick={() => setShowQRModal(false)}
-                className="absolute top-4 right-4 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                title="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                  <QrCode className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">EU Registry QR Passport Tag</h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Scan to verify battery registry alignment</p>
-                </div>
-
-                {/* QR Code rendering */}
-                <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-inner">
-                  <QRCode
-                    value={getQRValue()}
-                    size={160}
-                    level="M"
-                    style={{ display: 'block' }}
-                  />
-                </div>
-
-                {/* Verified Metadata summary list */}
-                <div className="w-full text-[11px] text-left border-t border-slate-100 pt-4 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Model Name:</span>
-                    <span className="font-semibold text-slate-700">{passport.model}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Chemistry:</span>
-                    <span className="font-semibold text-slate-700">{passport.chemistry}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Max Capacity:</span>
-                    <span className="font-semibold text-slate-700">
-                      {passport.capacityKwh ? `${passport.capacityKwh} kWh` : '75 kWh'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">State of Health (SoH):</span>
-                    <span className="font-bold text-emerald-600">
-                      {passport.stateOfHealth !== undefined ? `${passport.stateOfHealth}% of nominal` : '100% of nominal'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Origin:</span>
-                    <span className="font-semibold text-slate-700">{passport.countryOfOrigin || 'Germany'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
       </div>
     </div>

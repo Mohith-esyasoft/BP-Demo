@@ -34,9 +34,11 @@ import {
   XCircle,
   ShieldCheck,
   Copy,
+  QrCode,
 } from 'lucide-react';
 import Link from 'next/link';
 import { verifyPassport } from '@/lib/api/passports';
+import QRCode from 'react-qr-code';
 
 export default function PassportDetailPage() {
   const router = useRouter();
@@ -46,6 +48,15 @@ export default function PassportDetailPage() {
   
   const [verifying, setVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
+
+  const [showQRModal, setShowQRModal] = useState(false);
+
+  const getQRValue = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.origin + `/public-passport/${id}`;
+    }
+    return `https://passport.batterypassport.eu/public-passport/${id}`;
+  };
 
   const [copiedTx, setCopiedTx] = useState(false);
   const [copiedHash, setCopiedHash] = useState(false);
@@ -241,6 +252,13 @@ export default function PassportDetailPage() {
             <Globe className="w-4 h-4 text-emerald-400" />
             {passport.status === 'PUBLISHED' ? 'Public View' : 'Preview Public View'}
           </Link>
+          <button
+            onClick={() => setShowQRModal(true)}
+            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/50 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-1.5"
+          >
+            <QrCode className="w-4 h-4 text-emerald-400" />
+            Show QR Code
+          </button>
         </div>
       </div>
 
@@ -639,6 +657,50 @@ export default function PassportDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal Overlay */}
+      {showQRModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-slate-900 border border-slate-700/80 rounded-2xl overflow-hidden shadow-2xl animate-scale-up">
+            <div className="p-5 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="text-sm font-bold text-slate-200">EU Registry QR Tag</h3>
+              <button
+                onClick={() => setShowQRModal(false)}
+                className="p-1 rounded-md text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6 flex flex-col items-center text-center space-y-4">
+              <p className="text-xs text-slate-400">Scan this QR Code to view the public registry details of this battery.</p>
+              
+              <div className="p-4 bg-white rounded-xl shadow-inner border border-slate-200">
+                <QRCode
+                  value={getQRValue()}
+                  size={160}
+                  level="M"
+                  style={{ display: 'block' }}
+                />
+              </div>
+
+              <div className="w-full text-left text-xs border-t border-slate-800/80 pt-4 space-y-2 text-slate-400">
+                <div className="flex justify-between">
+                  <span>Passport ID:</span>
+                  <span className="font-semibold text-slate-200">{passport.passportId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Model:</span>
+                  <span className="font-semibold text-slate-200">{passport.model}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Serial:</span>
+                  <span className="font-semibold text-slate-200">{passport.serialNumber}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
