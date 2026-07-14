@@ -12,7 +12,7 @@ import {
 import { useAuthStore } from '@/lib/store/authStore';
 import { PassportStatusBadge } from '@/components/passport/PassportStatusBadge';
 import WorkflowTimeline from '@/components/passport/WorkflowTimeline';
-import { formatDate } from '@/lib/utils';
+import { formatDate, copyToClipboard } from '@/lib/utils';
 import {
   ArrowLeft,
   Calendar,
@@ -63,30 +63,38 @@ export default function PassportDetailPage() {
   const [copiedLocalHash, setCopiedLocalHash] = useState(false);
   const [copiedChainHash, setCopiedChainHash] = useState(false);
 
-  const handleCopyTx = () => {
+  const handleCopyTx = async () => {
     if (!passport) return;
-    navigator.clipboard.writeText(passport.blockchainTx || '');
-    setCopiedTx(true);
-    setTimeout(() => setCopiedTx(false), 2000);
+    const success = await copyToClipboard(passport.blockchainTx || '');
+    if (success) {
+      setCopiedTx(true);
+      setTimeout(() => setCopiedTx(false), 2000);
+    }
   };
 
-  const handleCopyHash = () => {
+  const handleCopyHash = async () => {
     if (!passport) return;
-    navigator.clipboard.writeText(passport.blockchainHash || '');
-    setCopiedHash(true);
-    setTimeout(() => setCopiedHash(false), 2000);
+    const success = await copyToClipboard(passport.blockchainHash || '');
+    if (success) {
+      setCopiedHash(true);
+      setTimeout(() => setCopiedHash(false), 2000);
+    }
   };
 
-  const handleCopyLocalHash = () => {
-    navigator.clipboard.writeText(verificationResult?.currentHash || '');
-    setCopiedLocalHash(true);
-    setTimeout(() => setCopiedLocalHash(false), 2000);
+  const handleCopyLocalHash = async () => {
+    const success = await copyToClipboard(verificationResult?.currentHash || '');
+    if (success) {
+      setCopiedLocalHash(true);
+      setTimeout(() => setCopiedLocalHash(false), 2000);
+    }
   };
 
-  const handleCopyChainHash = () => {
-    navigator.clipboard.writeText(verificationResult?.storedHash || '');
-    setCopiedChainHash(true);
-    setTimeout(() => setCopiedChainHash(false), 2000);
+  const handleCopyChainHash = async () => {
+    const success = await copyToClipboard(verificationResult?.storedHash || '');
+    if (success) {
+      setCopiedChainHash(true);
+      setTimeout(() => setCopiedChainHash(false), 2000);
+    }
   };
 
   const handleVerifyBlockchain = async () => {

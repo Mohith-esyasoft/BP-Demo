@@ -5,7 +5,7 @@ import { PassportFormData } from './index';
 import QRCode from 'react-qr-code';
 import { RefreshCw, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
-import { generatePassportId } from '@/lib/utils';
+import { generatePassportId, copyToClipboard } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 export function StepIdentification() {
@@ -20,9 +20,11 @@ export function StepIdentification() {
   };
 
   const copyId = async () => {
-    await navigator.clipboard.writeText(passportId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const success = await copyToClipboard(passportId);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const qrValue = passportId

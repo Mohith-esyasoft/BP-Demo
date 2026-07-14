@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getPublicPassport } from '@/lib/api/passports';
-import { formatDate } from '@/lib/utils';
+import { formatDate, copyToClipboard } from '@/lib/utils';
 import Image from 'next/image';
 import {
   ShieldAlert,
@@ -126,10 +126,12 @@ export default function PublicPassportViewPage() {
     window.print();
   };
 
-  const handleCopyId = () => {
-    navigator.clipboard.writeText(passport.passportId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyId = async () => {
+    const success = await copyToClipboard(passport.passportId);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   // Get flag emoji from country name/code
@@ -192,13 +194,11 @@ export default function PublicPassportViewPage() {
             
             {/* Product Graphic display */}
             <div className="w-full md:w-[240px] flex-shrink-0 flex flex-col items-center justify-center bg-slate-50 rounded-xl p-4 border border-slate-100">
-              <div className="relative w-40 h-32 md:w-48 md:h-36">
-                <Image
+              <div className="w-40 h-32 md:w-48 md:h-36 flex items-center justify-center">
+                <img
                   src="/ev_battery_pack.png"
                   alt="EV Battery Pack Render"
-                  fill
-                  className="object-contain"
-                  priority
+                  className="max-w-full max-h-full object-contain"
                 />
               </div>
             </div>

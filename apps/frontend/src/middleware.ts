@@ -15,6 +15,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow static public assets (images, icons, etc.)
+  const staticExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.css', '.js'];
+  if (staticExtensions.some((ext) => pathname.endsWith(ext))) {
+    return NextResponse.next();
+  }
+
   // Check for auth token in cookies (set by authStore.setAuth)
   const cookieToken = request.cookies.get('auth-token')?.value;
   // Also accept token from Authorization header (API calls)

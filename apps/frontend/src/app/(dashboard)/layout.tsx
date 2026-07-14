@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
 import Sidebar from '@/components/layout/Sidebar';
@@ -13,14 +13,19 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { token } = useAuthStore();
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    if (!token) {
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (isHydrated && !token) {
       router.replace('/login');
     }
-  }, [token, router]);
+  }, [isHydrated, token, router]);
 
-  if (!token) {
+  if (!isHydrated || !token) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
